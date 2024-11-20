@@ -166,7 +166,44 @@ function searchTable(type) {
 function editItem(id) {
     const item = inventory.find(i => i.id === id);
     if (item) {
-        // Edit logic for item
+        // Populate modal fields with item data
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalFields = document.getElementById('modalFields');
+
+        modal.style.display = 'flex';
+        modalTitle.textContent = 'Edit Item';
+        modalFields.innerHTML = `
+            <label for="productName">Product Name</label>
+            <input type="text" id="productName" name="productName" value="${item.productName}" required>
+            <label for="location">Location</label>
+            <input type="text" id="location" name="location" value="${item.location}" required>
+            <label for="onHand">On Hand</label>
+            <input type="number" id="onHand" name="onHand" value="${item.onHand}" required>
+            <label for="toOrder">To Order</label>
+            <input type="number" id="toOrder" name="toOrder" value="${item.toOrder}" required>
+        `;
+
+        document.getElementById('modalForm').onsubmit = function(event) {
+            event.preventDefault();
+
+            // Update item data in inventory array
+            const updatedItem = {
+                id: item.id,
+                productName: document.getElementById('productName').value,
+                location: document.getElementById('location').value,
+                onHand: parseInt(document.getElementById('onHand').value),
+                toOrder: parseInt(document.getElementById('toOrder').value)
+            };
+
+            const index = inventory.findIndex(i => i.id === id);
+            if (index !== -1) {
+                inventory[index] = updatedItem;
+                renderTable('items', inventory);
+            }
+
+            hideModal();
+        };
     }
 }
 
@@ -179,9 +216,40 @@ function deleteItem(id) {
 }
 
 function editCustomer(id) {
-    const customer = customers.find(c => c.id === id);
+     const customer = customers.find(c => c.id === id);
     if (customer) {
-        // Edit logic for customer
+        // Populate modal fields with customer data
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalFields = document.getElementById('modalFields');
+
+        modal.style.display = 'flex';
+        modalTitle.textContent = 'Edit Customer';
+        modalFields.innerHTML = `
+            <label for="customerName">Customer Name</label>
+            <input type="text" id="customerName" name="customerName" value="${customer.name}" required>
+            <label for="customerEmail">Email</label>
+            <input type="email" id="customerEmail" name="customerEmail" value="${customer.email}" required>
+        `;
+
+        document.getElementById('modalForm').onsubmit = function(event) {
+            event.preventDefault();
+
+            // Update customer data in customers array
+            const updatedCustomer = {
+                id: customer.id,
+                name: document.getElementById('customerName').value,
+                email: document.getElementById('customerEmail').value
+            };
+
+            const index = customers.findIndex(c => c.id === id);
+            if (index !== -1) {
+                customers[index] = updatedCustomer;
+                renderTable('customers', customers);
+            }
+
+            hideModal();
+        };
     }
 }
 
@@ -196,7 +264,41 @@ function deleteCustomer(id) {
 function editStaff(id) {
     const staffMember = staff.find(s => s.id === id);
     if (staffMember) {
-        // Edit logic for staff
+        // Populate modal fields with staff data
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalFields = document.getElementById('modalFields');
+
+        modal.style.display = 'flex';
+        modalTitle.textContent = 'Edit Staff';
+        modalFields.innerHTML = `
+            <label for="staffName">Staff Name</label>
+            <input type="text" id="staffName" name="staffName" value="${staffMember.name}" required>
+            <label for="staffRole">Role</label>
+            <input type="text" id="staffRole" name="staffRole" value="${staffMember.role}" required>
+            <label for="staffEmail">Email</label>
+            <input type="email" id="staffEmail" name="staffEmail" value="${staffMember.email}" required>
+        `;
+
+        document.getElementById('modalForm').onsubmit = function(event) {
+            event.preventDefault();
+
+            // Update staff data in staff array
+            const updatedStaff = {
+                id: staffMember.id,
+                name: document.getElementById('staffName').value,
+                role: document.getElementById('staffRole').value,
+                email: document.getElementById('staffEmail').value
+            };
+
+            const index = staff.findIndex(s => s.id === id);
+            if (index !== -1) {
+                staff[index] = updatedStaff;
+                renderTable('staff', staff);
+            }
+
+            hideModal();
+        };
     }
 }
 
