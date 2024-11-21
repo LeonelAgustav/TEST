@@ -1,88 +1,83 @@
-// Mock Data (Database Simulation)
-const inventory = [
-    { id: 1, productName: 'Laptop', location: 'Warehouse A', onHand: 50, toOrder: 20 },
-    { id: 2, productName: 'Mouse', location: 'Warehouse B', onHand: 150, toOrder: 100 }
-];
+const apiUrlItems = 'http://localhost:3000/items';
+const apiUrlCustomers = 'http://localhost:3000/customers';
+const apiUrlStaff = 'http://localhost:3000/staff';
 
-const customers = [
-    { id: 1, name: 'John Doe', email: 'john.doe@example.com' },
-    { id: 2, name: 'Jane Smith', email: 'jane.smith@example.com' }
-];
+let currentSection = 'items';
 
-const staff = [
-    { id: 1, name: 'Alice Johnson', role: 'Manager', email: 'alice.johnson@example.com' },
-    { id: 2, name: 'Bob Brown', role: 'Assistant', email: 'bob.brown@example.com' }
-];
-
-// Function to show a section based on the selected category
-function showSection(sectionId) {
-    // Hide all sections
-    const sections = document.querySelectorAll('.section');
-    sections.forEach(section => section.classList.add('hidden'));
-
-    // Show the selected section
-    document.getElementById(sectionId).classList.remove('hidden');
-
-    // Update table data based on the section selected
-    if (sectionId === 'items') {
-        renderTable('items', inventory);
-    } else if (sectionId === 'customers') {
-        renderTable('customers', customers);
-    } else if (sectionId === 'staff') {
-        renderTable('staff', staff);
-    }
+// Show the section based on menu selection
+function showSection(section) {
+    currentSection = section;
+    document.querySelectorAll('.section').forEach(sec => sec.classList.add('hidden'));
+    document.getElementById(section).classList.remove('hidden');
+    fetchData(section);
 }
 
-// Function to render data in a table
-function renderTable(type, data) {
-    const tableBody = document.querySelector(`#${type} tbody`);
-    tableBody.innerHTML = ''; // Clear existing rows
+// Go back to the homepage
+function goBack() {
+    document.querySelectorAll('.section').forEach(sec => sec.classList.add('hidden'));
+    document.getElementById('homepage').classList.remove('hidden');
+}
+
+// Fetch data from the API
+function fetchData(section) {
+    let url;
+    switch (section) {
+        case 'items':
+            url = apiUrlItems;
+            break;
+        case 'customers':
+            url = apiUrlCustomers;
+            break;
+        case 'staff':
+            url = apiUrlStaff;
+            break;
+        default:
+            return;
+    }
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            populateTable(section, data);
+        })
+        .catch(error => console.error('Error fetching data:', error));
+}
+
+// Populate the table with data
+function populateTable(section, data) {
+    const tableBody = document.querySelector(`#${section}Table tbody`);
+    tableBody.innerHTML = '';
 
     data.forEach(item => {
-        const row = document.createElement('tr');
-        if (type === 'items') {
-            row.innerHTML = `
-                <td>${item.productName}</td>
-                <td>${item.location}</td>
-                <td>${item.onHand}</td>
-                <td>${item.toOrder}</td>
-                <td>
-                    <button onclick="editItem(${item.id})">Edit</button>
-                    <button onclick="deleteItem(${item.id})">Delete</button>
-                </td>
-            `;
-        } else if (type === 'customers') {
-            row.innerHTML = `
-                <td>${item.name}</td>
-                <td>${item.email}</td>
-                <td>
-                    <button onclick="editCustomer(${item.id})">Edit</button>
-                    <button onclick="deleteCustomer(${item.id})">Delete</button>
-                </td>
-            `;
-        } else if (type === 'staff') {
-            row.innerHTML = `
-                <td>${item.name}</td>
-                <td>${item.role}</td>
-                <td>${item.email}</td>
-                <td>
-                    <button onclick="editStaff(${item.id})">Edit</button>
-                    <button onclick="deleteStaff(${item.id})">Delete</button>
-                </td>
-            `;
-        }
+        let row = document.createElement('tr');
+        Object.keys(item).forEach(key => {
+            if (key !== 'id') {
+                let cell = document.createElement('td');
+                cell.textContent = item[key];
+                row.appendChild(cell);
+            }
+        });
+
+        let actionsCell = document.createElement('td');
+        actionsCell.innerHTML = `
+            <button onclick="showEditModal('${section}', ${item.id})">Edit</button>
+            <button onclick="deleteItem('${section}', ${item.id})">Delete</button>
+        `;
+        row.appendChild(actionsCell);
+
         tableBody.appendChild(row);
     });
 }
 
-// Function to go back to the homepage
-function goBack() {
-    const sections = document.querySelectorAll('.section');
-    sections.forEach(section => section.classList.add('hidden'));
-    document.getElementById('homepage').classList.remove('hidden');
-}
+// Add event listener for the close button
+document.addEventListener('DOMContentLoaded', () => {
+    const closeButton = document.querySelector('.modal__close');
+    if (closeButton) {
+        closeButton.addEventListener('click', closeModal);
+    }
+});
 
-// Add Modal Functionality
+// Show add modal
 function showAddModal(type) {
     const modal = document.getElementById('modal');
     const modalTitle = document.getElementById('modalTitle');
@@ -93,219 +88,173 @@ function showAddModal(type) {
     if (type === 'items') {
         modalTitle.textContent = 'Add New Item';
         modalFields.innerHTML = `
-            <label for="productName">Product Name</label>
-            <input type="text" id="productName" name="productName" required>
-            <label for="location">Location</label>
-            <input type="text" id="location" name="location" required>
-            <label for="onHand">On Hand</label>
-            <input type="number" id="onHand" name="onHand" required>
-            <label for="toOrder">To Order</label>
-            <input type="number" id="toOrder" name="toOrder" required>
+            <label for="name">Name</label>  
+            <input type="text" id="name" name="name" required>
+            <label for="quantity">Quantity</label>
+            <input type="number" id="quantity" name="quantity" required>
+            <label for="description">Description</label>
+            <input type="text" id="description" name="description" required>
         `;
     } else if (type === 'customers') {
         modalTitle.textContent = 'Add New Customer';
         modalFields.innerHTML = `
-            <label for="customerName">Customer Name</label>
-            <input type="text" id="customerName" name="customerName" required>
-            <label for="customerEmail">Email</label>
-            <input type="email" id="customerEmail" name="customerEmail" required>
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+            <label for="phone">Phone</label>
+            <input type="number" id="phone" name="phone" required>
+            <label for="address">Address</label>
+            <input type="text" id="address" name="address" required>
         `;
     } else if (type === 'staff') {
         modalTitle.textContent = 'Add New Staff';
         modalFields.innerHTML = `
-            <label for="staffName">Staff Name</label>
-            <input type="text" id="staffName" name="staffName" required>
-            <label for="staffRole">Role</label>
-            <input type="text" id="staffRole" name="staffRole" required>
-            <label for="staffEmail">Email</label>
-            <input type="email" id="staffEmail" name="staffEmail" required>
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+            <label for="role">Role</label>
+            <input type="text" id="role" name="role" required>
+            <label for="phone">Phone</label>
+            <input type="number" id="phone" name="phone" required>
         `;
     }
 
     document.getElementById('modalForm').onsubmit = function(event) {
         event.preventDefault();
-        // Handle form submission for adding data to respective sections
-        if (type === 'items') {
-            // Add item logic
-        } else if (type === 'customers') {
-            // Add customer logic
-        } else if (type === 'staff') {
-            // Add staff logic
-        }
-        hideModal();
+        handleAdd(event, type);
+        closeModal();
     };
 }
 
-// Function to hide the modal
-function hideModal() {
-    document.getElementById('modal').style.display = 'none';
+// Close modal
+function closeModal() {
+    const modal = document.getElementById('modal');
+    modal.style.display = 'none';
 }
 
-// Function to search a table for specific text
-function searchTable(type) {
-    const searchTerm = document.querySelector(`#${type} .search-input`).value.toLowerCase();
-    const table = document.querySelector(`#${type} table`);
+// Handle add action
+function handleAdd(event, section) {
+    const form = new FormData(event.target);
+    const data = {};
+    form.forEach((value, key) => {
+        data[key] = value;
+    });
+
+    let url;
+    switch (section) {
+        case 'items':
+            url = apiUrlItems;
+            break;
+        case 'customers':
+            url = apiUrlCustomers;
+            break;
+        case 'staff':
+            url = apiUrlStaff;
+            break;
+        default:
+            return;
+    }
+
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(() => {
+        fetchData(section);
+    })
+    .catch(error => console.error('Error adding data:', error));
+}
+
+// Show edit modal
+function showEditModal(section, id) {
+    fetch(`http://localhost:3000/${section}/${id}`)
+        .then(response => response.json())
+        .then(item => {
+            const modal = document.getElementById('modal');
+            modal.style.display = 'flex';
+            document.getElementById('modalTitle').textContent = `Edit ${section.slice(0, -1).toUpperCase()}`;
+            setupFormFields(section);
+            fillFormFields(item);
+            document.getElementById('modalForm').onsubmit = (e) => handleEdit(e, section, id);
+        })
+        .catch(error => console.error('Error fetching item:', error));
+}
+
+// Fill the form fields with item data for editing
+function fillFormFields(item) {
+    for (const key in item) {
+        if (item.hasOwnProperty(key) && document.getElementById(key)) {
+            document.getElementById(key).value = item[key];
+        }
+    }
+}
+
+// Handle edit action
+function handleEdit(event, section, id) {
+    event.preventDefault();
+    const form = new FormData(event.target);
+    const data = {};
+    form.forEach((value, key) => {
+        data[key] = value;
+    });
+
+    let url = `http://localhost:3000/${section}/${id}`;
+
+    fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(() => {
+        closeModal();
+        fetchData(section);
+    })
+    .catch(error => console.error('Error updating data:', error));
+}
+
+// Delete item
+function deleteItem(section, id) {
+    if (confirm('Are you sure you want to delete this item?')) {
+        let url = `http://localhost:3000/${section}/${id}`;
+
+        fetch(url, { method: 'DELETE' })
+        .then(response => response.json())
+        .then(() => {
+            fetchData(section);
+        })
+        .catch(error => console.error('Error deleting data:', error));
+    }
+}
+
+// Search table based on input
+function searchTable(section) {
+    const input = document.getElementById(`search${capitalizeFirstLetter(section)}`);
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById(`${section}Table`);
     const rows = table.getElementsByTagName('tr');
 
     for (let i = 1; i < rows.length; i++) {
-        let cells = rows[i].getElementsByTagName('td');
-        let match = false;
+        let row = rows[i];
+        let found = false;
 
-        for (let j = 0; j < cells.length; j++) {
-            if (cells[j].innerText.toLowerCase().includes(searchTerm)) {
-                match = true;
+        for (let j = 0; j < row.cells.length - 1; j++) {
+            let cell = row.cells[j];
+            if (cell.textContent.toLowerCase().includes(filter)) {
+                found = true;
                 break;
             }
         }
 
-        rows[i].style.display = match ? '' : 'none';
+        row.style.display = found ? '' : 'none';
     }
 }
 
-// Edit and Delete Functions
-function editItem(id) {
-    const item = inventory.find(i => i.id === id);
-    if (item) {
-        // Populate modal fields with item data
-        const modal = document.getElementById('modal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalFields = document.getElementById('modalFields');
-
-        modal.style.display = 'flex';
-        modalTitle.textContent = 'Edit Item';
-        modalFields.innerHTML = `
-            <label for="productName">Product Name</label>
-            <input type="text" id="productName" name="productName" value="${item.productName}" required>
-            <label for="location">Location</label>
-            <input type="text" id="location" name="location" value="${item.location}" required>
-            <label for="onHand">On Hand</label>
-            <input type="number" id="onHand" name="onHand" value="${item.onHand}" required>
-            <label for="toOrder">To Order</label>
-            <input type="number" id="toOrder" name="toOrder" value="${item.toOrder}" required>
-        `;
-
-        document.getElementById('modalForm').onsubmit = function(event) {
-            event.preventDefault();
-
-            // Update item data in inventory array
-            const updatedItem = {
-                id: item.id,
-                productName: document.getElementById('productName').value,
-                location: document.getElementById('location').value,
-                onHand: parseInt(document.getElementById('onHand').value),
-                toOrder: parseInt(document.getElementById('toOrder').value)
-            };
-
-            const index = inventory.findIndex(i => i.id === id);
-            if (index !== -1) {
-                inventory[index] = updatedItem;
-                renderTable('items', inventory);
-            }
-
-            hideModal();
-        };
-    }
-}
-
-function deleteItem(id) {
-    const index = inventory.findIndex(i => i.id === id);
-    if (index !== -1) {
-        inventory.splice(index, 1);
-        renderTable('items', inventory);
-    }
-}
-
-function editCustomer(id) {
-     const customer = customers.find(c => c.id === id);
-    if (customer) {
-        // Populate modal fields with customer data
-        const modal = document.getElementById('modal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalFields = document.getElementById('modalFields');
-
-        modal.style.display = 'flex';
-        modalTitle.textContent = 'Edit Customer';
-        modalFields.innerHTML = `
-            <label for="customerName">Customer Name</label>
-            <input type="text" id="customerName" name="customerName" value="${customer.name}" required>
-            <label for="customerEmail">Email</label>
-            <input type="email" id="customerEmail" name="customerEmail" value="${customer.email}" required>
-        `;
-
-        document.getElementById('modalForm').onsubmit = function(event) {
-            event.preventDefault();
-
-            // Update customer data in customers array
-            const updatedCustomer = {
-                id: customer.id,
-                name: document.getElementById('customerName').value,
-                email: document.getElementById('customerEmail').value
-            };
-
-            const index = customers.findIndex(c => c.id === id);
-            if (index !== -1) {
-                customers[index] = updatedCustomer;
-                renderTable('customers', customers);
-            }
-
-            hideModal();
-        };
-    }
-}
-
-function deleteCustomer(id) {
-    const index = customers.findIndex(c => c.id === id);
-    if (index !== -1) {
-        customers.splice(index, 1);
-        renderTable('customers', customers);
-    }
-}
-
-function editStaff(id) {
-    const staffMember = staff.find(s => s.id === id);
-    if (staffMember) {
-        // Populate modal fields with staff data
-        const modal = document.getElementById('modal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalFields = document.getElementById('modalFields');
-
-        modal.style.display = 'flex';
-        modalTitle.textContent = 'Edit Staff';
-        modalFields.innerHTML = `
-            <label for="staffName">Staff Name</label>
-            <input type="text" id="staffName" name="staffName" value="${staffMember.name}" required>
-            <label for="staffRole">Role</label>
-            <input type="text" id="staffRole" name="staffRole" value="${staffMember.role}" required>
-            <label for="staffEmail">Email</label>
-            <input type="email" id="staffEmail" name="staffEmail" value="${staffMember.email}" required>
-        `;
-
-        document.getElementById('modalForm').onsubmit = function(event) {
-            event.preventDefault();
-
-            // Update staff data in staff array
-            const updatedStaff = {
-                id: staffMember.id,
-                name: document.getElementById('staffName').value,
-                role: document.getElementById('staffRole').value,
-                email: document.getElementById('staffEmail').value
-            };
-
-            const index = staff.findIndex(s => s.id === id);
-            if (index !== -1) {
-                staff[index] = updatedStaff;
-                renderTable('staff', staff);
-            }
-
-            hideModal();
-        };
-    }
-}
-
-function deleteStaff(id) {
-    const index = staff.findIndex(s => s.id === id);
-    if (index !== -1) {
-        staff.splice(index, 1);
-        renderTable('staff', staff);
-    }
+// Capitalize first letter of a string
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
 }
